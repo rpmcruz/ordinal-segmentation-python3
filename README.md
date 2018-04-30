@@ -1,2 +1,2 @@
-# ordinal-segmentation
-Ordinal Segmentation using Deep Neural Networks
+# Ordinal Segmentation using Deep Neural Networks
+
