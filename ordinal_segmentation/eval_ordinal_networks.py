@@ -284,27 +284,29 @@ for foldid in range(dataset_config['folds']):
         loss_name, loss = losses[0]
 
         for ord_ in ordinal_list:
+            # Ricardo: allow using 'softmax' instead of 'sigmoid' (default)
+            # Also added this suffix to the path to save both baselines.
+            final_act = ord_[4] if len(ord_) > 4 else 'sigmoid'
+            suffix = '-' + ord_[4] if len(ord_) > 4 else ''
+
             path = os.path.join('output', 'models',
                                 dataset_config['name'],
                                 'fold%d' % foldid,
                                 'keras',
-                                'unet%d-%d-%s-%d-%s-%d.hdf5' %
+                                'unet%d-%d-%s-%d-%s-%d%s.hdf5' %
                                 (conv_num, conv_filter_size, loss_name,
-                                ord_[0], ord_[1], ord_[2]))
+                                ord_[0], ord_[1], ord_[2], suffix))
 
             pckl_path = os.path.join('output', 'models',
                                      dataset_config['name'],
                                      'fold%d' % foldid,
-                                     'unet%d-%d-%s-%d-%s-%d.pckl' %
+                                     'unet%d-%d-%s-%d-%s-%d%s.pckl' %
                                      (conv_num, conv_filter_size, loss_name,
-                                      ord_[0], ord_[1], ord_[2]))
+                                      ord_[0], ord_[1], ord_[2], suffix))
 
             if os.path.exists(path) or os.path.exists(pckl_path):
                 print(path, 'already exists')
                 continue
-
-            # Ricardo: allow using 'softmax' instead of 'sigmoid' (default)
-            final_act = ord_[4] if len(ord_) > 4 else 'sigmoid'
 
             model = OrdinalUNet(conv_num=conv_num,
                                 conv_filter_size=conv_filter_size,
@@ -314,7 +316,7 @@ for foldid in range(dataset_config['folds']):
                                 parallel_hyperplanes=ord_[2],
                                 include_distances=ord_[3],
                                 augment=augment,
-                                max_epochs=500,
+                                max_epochs=5,
                                 keras_filepath=path,
                                 final_act=final_act,  # Ricardo
                                 )
@@ -323,18 +325,20 @@ for foldid in range(dataset_config['folds']):
                                             'fold%d' % foldid))
             
 
-            model.opt_network = None
-            model.network = None
+            #model.opt_network = None
+            #model.network = None
 
-            f = open(pckl_path, 'wb')
-            pickle.dump(model, f)
-            f.close()
+            # Ricardo: disabled saving - not currently working
+            #f = open(pckl_path, 'wb')
+            #pickle.dump(model, f)
+            #f.close()
 
-            """
+            # Ricardo: uncommented this code to evaluate results
+            #"""
             preds = model.predict(test_imgs)
             probs = model.transform(test_imgs)
 
-            print path
+            print(path)
 
             classes = set([y for x in test_masks for y in list(set(x.ravel()))])
             nlabels = len(classes)
@@ -343,17 +347,17 @@ for foldid in range(dataset_config['folds']):
                 current_mask = [t >= label for t in test_masks]
                 current_preds = [p >= label_id for p in preds]
 
-                print np.mean([np.mean(y == p) for y, p in zip(current_mask, current_preds)]) * 100.,
+                print(np.mean([np.mean(y == p) for y, p in zip(current_mask, current_preds)]) * 100.)
 
-            print accuracy(test_masks, preds) * 100.
+            print(accuracy(test_masks, preds) * 100.)
 
-            print 'Accuracy:', accuracy(test_masks, preds) * 100.
-            print 'Non-ordinal Error:', nonordinal_error(test_masks, preds) * 100.
-            print 'ord-Accuracy:', ordinal_accuracy(test_masks, preds) * 100.
-            print 'Dice:', dice_coef(test_masks, preds) * 100.
-            print 'MAE:', mae(test_masks, preds)
-            print
-            """
+            print('Accuracy:', accuracy(test_masks, preds) * 100.)
+            print('Non-ordinal Error:', nonordinal_error(test_masks, preds) * 100.)
+            print('ord-Accuracy:', ordinal_accuracy(test_masks, preds) * 100.)
+            print('Dice:', dice_coef(test_masks, preds) * 100.)
+            print('MAE:', mae(test_masks, preds))
+            print()
+            #"""
             print()
 
 os.sys.exit(0)

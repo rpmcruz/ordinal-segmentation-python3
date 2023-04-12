@@ -8,6 +8,7 @@ This is Kelwin's code to his paper: https://ieeexplore.ieee.org/document/8489527
 * some minor changes to make it work: such as using `multiprocessing=True` since I was getting erros due to thread unsafe generator.
 * added a symlink: `data/partitions` to `/data/bioeng/ordinal-segmentation/partitions` (adjust to your datapath)
 * I also added a baseline that uses 'softmax' instead of the 'sigmoid' (default)
+* There are some warnings: I am ignoring them
 
 **How to use?**
 * Install latest TensorFlow: `pip3 install tensorflow`
