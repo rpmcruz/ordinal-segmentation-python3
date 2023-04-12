@@ -1,5 +1,5 @@
-from keras.losses import binary_crossentropy
-from keras import backend as K
+from tensorflow.compat.v1.keras.losses import binary_crossentropy
+from tensorflow.compat.v1.keras import backend as K
 
 DICE_SMOOTH = 1.
 

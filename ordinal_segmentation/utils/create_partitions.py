@@ -62,8 +62,8 @@ for i in range(args.folds):
                              'test': ts_index})
 
 for fold_id, index in enumerate(final_partitions):
-    for subset, index in index.items():
-        print fold_id, subset
+    for subset, index in list(index.items()):
+        print(fold_id, subset)
         new_img_path = os.path.join(args.output, 'fold%d' % fold_id,
                                     subset, 'imgs', 'seg')
         new_mask_path = os.path.join(args.output, 'fold%d' % fold_id,
@@ -77,5 +77,5 @@ for fold_id, index in enumerate(final_partitions):
                         os.path.join(new_img_path, ifs))
             shutil.copy(os.path.join(in_path, 'masks', mfs),
                         os.path.join(new_mask_path, mfs))
-    print
+    print()
 os.sys.exit(0)

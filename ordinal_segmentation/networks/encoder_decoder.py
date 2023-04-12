@@ -1,25 +1,25 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from itertools import izip
+
 import numpy as np
 import cv2
 import os
 
 
 # Keras
-from keras.layers.convolutional import Conv2D, UpSampling2D, ZeroPadding2D
-from keras.layers import Input, Dense, Dropout, Flatten
-from keras.layers.pooling import MaxPooling2D
-from keras.initializers import glorot_uniform
-from keras.layers.merge import Concatenate
-from keras.utils import to_categorical
-from keras.layers.core import Reshape
-from keras import regularizers
-from keras import backend as K
-from keras.models import Model 
+from tensorflow.compat.v1.keras.layers import Conv2D, UpSampling2D, ZeroPadding2D
+from tensorflow.compat.v1.keras.layers import Input, Dense, Dropout, Flatten
+from tensorflow.compat.v1.keras.layers import MaxPooling2D
+from tensorflow.compat.v1.keras.initializers import glorot_uniform
+from tensorflow.compat.v1.keras.layers import Concatenate
+from tensorflow.compat.v1.keras.utils import to_categorical
+from tensorflow.compat.v1.keras.layers import Reshape
+from tensorflow.compat.v1.keras import regularizers
+from tensorflow.compat.v1.keras import backend as K
+from tensorflow.compat.v1.keras.models import Model 
 
 
 from . import SegmentationNetwork
-from utils import dice_coef, dice_coef_loss
+from .utils import dice_coef, dice_coef_loss
 
 
 class EncoderDecoder(SegmentationNetwork):

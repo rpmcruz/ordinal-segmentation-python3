@@ -1,8 +1,9 @@
 from scipy.ndimage.morphology import distance_transform_edt
-from keras.backend.tensorflow_backend import set_session
+#from tensorflow.compat.v1.keras.backend.tensorflow_backend import set_session
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import argparse
 import pickle
@@ -13,6 +14,7 @@ import os
 
 from networks.unet import OrdinalUNet
 from networks import utils
+from functools import reduce
 
 
 def mask_dilate(img, factor=1.):
@@ -237,7 +239,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-set_session(tf.Session(config=config))
+#set_session(tf.Session(config=config))
 
 args = get_args()
 
@@ -262,10 +264,10 @@ loss_name, loss = losses[0]
 
 for foldid in range(dataset_config['folds']):
     ord_ = ordinal
-    print 'Fold %d' % foldid
+    print('Fold %d' % foldid)
 
     for w in [1e-4, 1e-3, 1e-2, 1e-1]:
-        print 'Smoothness weight %f' % w
+        print('Smoothness weight %f' % w)
 
         path = os.path.join('output', 'spatial-models',
                             dataset_config['name'],
@@ -283,7 +285,7 @@ for foldid in range(dataset_config['folds']):
                                     ord_[0], ord_[1], ord_[2], w))
 
         if os.path.exists(path) or os.path.exists(pckl_path):
-            print path, 'already exists'
+            print(path, 'already exists')
             continue
 
         model = OrdinalUNet(conv_num=conv_num,

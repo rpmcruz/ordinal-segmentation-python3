@@ -16,8 +16,8 @@ from functools import partial
 import cv2
 from skimage.exposure import adjust_sigmoid
 
-from keras import backend as K
-from keras.utils.data_utils import Sequence
+from tensorflow.compat.v1.keras import backend as K
+from tensorflow.keras.utils import Sequence
 
 try:
     from PIL import Image as pil_image
@@ -851,7 +851,7 @@ class NumpyArrayIterator(Iterator):
         batch_y = self.y[index_array]
         return batch_x, batch_y
 
-    def next(self):
+    def __next__(self):
         """For python 2.x.
 
         # Returns
@@ -1020,7 +1020,7 @@ class DirectoryIterator(Iterator):
                 if os.path.isdir(os.path.join(directory, subdir)):
                     classes.append(subdir)
         self.num_class = len(classes)
-        self.class_indices = dict(zip(classes, range(len(classes))))
+        self.class_indices = dict(list(zip(classes, list(range(len(classes))))))
 
         pool = multiprocessing.pool.ThreadPool()
         function_partial = partial(_count_valid_files_in_directory,
@@ -1030,7 +1030,7 @@ class DirectoryIterator(Iterator):
                                     (os.path.join(directory, subdir)
                                      for subdir in classes)))
 
-        print('Found %d images belonging to %d classes.' % (self.samples, self.num_class))
+        print(('Found %d images belonging to %d classes.' % (self.samples, self.num_class)))
 
         # second, build an index of the images in the different class subfolders
         results = []
@@ -1088,7 +1088,7 @@ class DirectoryIterator(Iterator):
             return batch_x
         return batch_x, batch_y
 
-    def next(self):
+    def __next__(self):
         """For python 2.x.
 
         # Returns

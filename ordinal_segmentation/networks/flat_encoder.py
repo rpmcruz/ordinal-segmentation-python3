@@ -1,5 +1,5 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from itertools import izip
+
 import numpy as np
 import copy
 import math
@@ -8,23 +8,23 @@ import os
 
 
 # Keras
-from keras.preprocessing.image import ImageDataGenerator
-from keras.layers import Input, Dense, Dropout, Flatten
-from keras.layers.core import Reshape
+from tensorflow.compat.v1.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.compat.v1.keras.layers import Input, Dense, Dropout, Flatten
+from tensorflow.compat.v1.keras.layers import Reshape
 from sklearn.model_selection import train_test_split
-from keras.layers.advanced_activations import PReLU
-from keras.layers.pooling import MaxPooling2D
-from keras.layers.convolutional import Conv2D
-from keras.initializers import glorot_uniform
-from keras import regularizers
-from keras.layers.merge import Concatenate
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.utils import to_categorical
-from keras import backend as K
-from keras.models import Model
+from tensorflow.compat.v1.keras.layers import PReLU
+from tensorflow.compat.v1.keras.layers import MaxPooling2D
+from tensorflow.compat.v1.keras.layers import Conv2D
+from tensorflow.compat.v1.keras.initializers import glorot_uniform
+from tensorflow.compat.v1.keras import regularizers
+from tensorflow.compat.v1.keras.layers import Concatenate
+from tensorflow.compat.v1.keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.compat.v1.keras.utils import to_categorical
+from tensorflow.compat.v1.keras import backend as K
+from tensorflow.compat.v1.keras.models import Model
 
 
-from utils import dice_coef, dice_coef_loss
+from .utils import dice_coef, dice_coef_loss
 from . import SegmentationNetwork, bg_to_mean, rescale_img
 
 

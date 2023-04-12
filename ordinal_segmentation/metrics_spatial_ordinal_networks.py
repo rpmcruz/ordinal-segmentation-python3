@@ -1,9 +1,10 @@
 from scipy.ndimage.morphology import distance_transform_edt
-from keras.backend.tensorflow_backend import set_session
+#from tensorflow.compat.v1.keras.backend.tensorflow_backend import set_session
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
 from collections import Counter
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import argparse
 import pickle
@@ -14,6 +15,7 @@ import os
 
 from networks.unet import OrdinalUNet
 from networks import utils
+from functools import reduce
 
 nlabels = None
 
@@ -245,8 +247,8 @@ def confmat(y_true, y_pred):
     for m, p in zip(map_to_ordinal(y_true), y_pred):
         m_ = m.ravel()
         p_ = p.ravel()
-        cc = Counter(zip(m_, p_))
-        for (actual_label, predicted_label), freq in cc.items():
+        cc = Counter(list(zip(m_, p_)))
+        for (actual_label, predicted_label), freq in list(cc.items()):
             ret[actual_label][predicted_label] += freq * 100. / len(m_)
 
     ret /= len(y_true)
@@ -277,7 +279,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-set_session(tf.Session(config=config))
+#set_session(tf.Session(config=config))
 
 args = get_args()
 
@@ -326,7 +328,7 @@ for w in [1e-4, 1e-3, 1e-2, 1e-1]:
                                     (conv_num, conv_filter_size, loss_name,
                                     ord_[0], ord_[1], ord_[2], w))
         if not os.path.exists(pckl_path):
-            print pckl_path, 'doesn\'t exist'
+            print(pckl_path, 'doesn\'t exist')
             continue
 
         _original_stdout = os.sys.stdout
@@ -366,15 +368,15 @@ for w in [1e-4, 1e-3, 1e-2, 1e-1]:
             if metric in test_results:
                 results[ord_][metric].append(test_results[metric])
 
-    print w, ord_
+    print(w, ord_)
     for metric, _, _ in metrics:
-        print '%20s: %11.6f' % (metric, np.mean(results[ord_][metric])), \
-            results[ord_][metric]
+        print('%20s: %11.6f' % (metric, np.mean(results[ord_][metric])), \
+            results[ord_][metric])
 
     res = ['%11.6f' % np.mean(results[ord_][metric])
             for metric, _, _ in metrics]
-    print ' & '.join(res), '\\\\'
-print
+    print(' & '.join(res), '\\\\')
+print()
 
 """
             cm = confmat(test_masks, preds)

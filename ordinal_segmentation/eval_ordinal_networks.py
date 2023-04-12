@@ -1,8 +1,10 @@
 from scipy.ndimage.morphology import distance_transform_edt
-from keras.backend.tensorflow_backend import set_session
+#from tensorflow.compat.v1.keras.backend.tensorflow_backend import set_session
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
-import tensorflow as tf
+#import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import argparse
 import pickle
@@ -13,6 +15,7 @@ import os
 
 from networks.unet import OrdinalUNet
 from networks import utils
+from functools import reduce
 
 
 def mask_dilate(img, factor=1.):
@@ -237,7 +240,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-set_session(tf.Session(config=config))
+#set_session(tf.Session(config=config))
 
 args = get_args()
 
@@ -257,6 +260,8 @@ augment = dataset_config['augment']
 ordinal_list = [
                 # Baseline
                 (False, False, False, False),
+                # Ricardo: Baseline with softmax
+                (False, False, False, False, 'softmax'),
                 # Frank & Hall output
                 (True, False, False, False),
                 (True, False, True, False),
@@ -295,8 +300,11 @@ for foldid in range(dataset_config['folds']):
                                       ord_[0], ord_[1], ord_[2]))
 
             if os.path.exists(path) or os.path.exists(pckl_path):
-                print path, 'already exists'
+                print(path, 'already exists')
                 continue
+
+            # Ricardo: allow using 'softmax' instead of 'sigmoid' (default)
+            final_act = ord_[4] if len(ord_) > 4 else 'sigmoid'
 
             model = OrdinalUNet(conv_num=conv_num,
                                 conv_filter_size=conv_filter_size,
@@ -308,6 +316,7 @@ for foldid in range(dataset_config['folds']):
                                 augment=augment,
                                 max_epochs=500,
                                 keras_filepath=path,
+                                final_act=final_act,  # Ricardo
                                 )
 
             model.fit_from_dir(os.path.join(dataset_path,
@@ -345,7 +354,7 @@ for foldid in range(dataset_config['folds']):
             print 'MAE:', mae(test_masks, preds)
             print
             """
-            print
+            print()
 
 os.sys.exit(0)
 

@@ -1,9 +1,9 @@
 from scipy.ndimage.morphology import distance_transform_edt
-from keras.backend.tensorflow_backend import set_session
 from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
 from collections import Counter
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import numpy as np
 import argparse
 import pickle
@@ -12,8 +12,9 @@ import cv2
 import os
 
 
-from networks.unet import OrdinalUNet
-from networks import utils
+from .networks.unet import OrdinalUNet
+from .networks import utils
+from functools import reduce
 
 nlabels = None
 
@@ -130,7 +131,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-set_session(tf.Session(config=config))
+#set_session(tf.Session(config=config))
 
 args = get_args()
 
@@ -173,7 +174,7 @@ for ord_ in ordinal_list:
     #folds = [0]
 
     for foldid in folds:
-        print('Fold %d' % foldid)
+        print(('Fold %d' % foldid))
         val_best_results = -np.inf
         test_results = -np.inf
 
@@ -187,7 +188,7 @@ for ord_ in ordinal_list:
                                      (conv_num, conv_filter_size, loss_name,
                                       ord_[0], ord_[1], ord_[2]))
             if not os.path.exists(pckl_path):
-                print pckl_path, 'doesn\'t exist'
+                print(pckl_path, 'doesn\'t exist')
                 continue
 
             #print pckl_path
@@ -217,9 +218,9 @@ for ord_ in ordinal_list:
                 preds = model.predict(test_imgs)
                 test_results = ordinal_transitions(preds)
 
-            print('Best: %f' % test_results)
+            print(('Best: %f' % test_results))
         results[ord_].append(test_results)
-        print
+        print()
     
     print('======= FINAL =======')
-    print(ord_, np.mean(results[ord_]))
+    print((ord_, np.mean(results[ord_])))

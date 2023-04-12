@@ -1,28 +1,28 @@
 from sklearn.base import BaseEstimator, TransformerMixin
-from itertools import izip
+
 import numpy as np
 import cv2
 import os
 
 
 # Keras
-from keras.layers.normalization import BatchNormalization
-from keras.layers.convolutional import Conv2D, UpSampling2D, \
+from tensorflow.compat.v1.keras.layers import BatchNormalization
+from tensorflow.compat.v1.keras.layers import Conv2D, UpSampling2D, \
     Conv2DTranspose, SeparableConv2D, Conv3D
-from keras.layers import Input, Dense, Dropout, Flatten, Cropping2D
-from keras.layers.core import Activation, Lambda, ActivityRegularization
-from keras.layers.pooling import MaxPooling2D
-from keras.initializers import glorot_uniform
-from keras.layers.merge import Concatenate, Maximum, Add, Multiply
-from keras.utils import to_categorical
-from keras.layers.core import Reshape
-from keras import regularizers
-from keras import backend as K
-from keras.models import Model
+from tensorflow.compat.v1.keras.layers import Input, Dense, Dropout, Flatten, Cropping2D
+from tensorflow.compat.v1.keras.layers import Activation, Lambda, ActivityRegularization
+from tensorflow.compat.v1.keras.layers import MaxPooling2D
+from tensorflow.compat.v1.keras.initializers import glorot_uniform
+from tensorflow.compat.v1.keras.layers import Concatenate, Maximum, Add, Multiply
+from tensorflow.compat.v1.keras.utils import to_categorical
+from tensorflow.compat.v1.keras.layers import Reshape
+from tensorflow.compat.v1.keras import regularizers
+from tensorflow.compat.v1.keras import backend as K
+from tensorflow.compat.v1.keras.models import Model
 
 
 from . import SegmentationNetwork
-from utils import dice_coef, dice_coef_loss, worst_dice_coef, \
+from .utils import dice_coef, dice_coef_loss, worst_dice_coef, \
     macro_dice_coef, best_dice_coef, dice_coef_class
 
 
@@ -136,7 +136,7 @@ class OrdinalUNet(SegmentationNetwork):
                         next_output = Conv2D(1, (1, 1), activation='linear')(
                             last_per_label[d])
 
-                    next_output = Activation('sigmoid')(next_output)
+                    next_output = Activation(self.final_act)(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -154,8 +154,8 @@ class OrdinalUNet(SegmentationNetwork):
                             last_per_label[d])
 
     
-                    next_output = Activation('sigmoid',
-                                            name='sigmoid%d' % d)(next_output)
+                    next_output = Activation(self.final_act,
+                                            name='sigmoid%d' % d)(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -163,8 +163,8 @@ class OrdinalUNet(SegmentationNetwork):
                 next_output = Conv2D(1, (1, 1), activation='linear',
                                      name='out%d' % d)(last_per_label[d])
 
-                next_output = Activation('sigmoid',
-                                         name='sigmoid%d' % d)(next_output)
+                next_output = Activation(self.final_act,
+                                         name='sigmoid%d' % d)(next_output)  # Ricardo
 
                 scoring_outputs.append(next_output)
                 prob_outputs.append(next_output)
@@ -230,7 +230,7 @@ class OrdinalUNet(SegmentationNetwork):
             ver_monoticity_output = \
                 Add(name='ver-monoticity')(ver_monoticity_outputs)
 
-        print len(prob_outputs)
+        print(len(prob_outputs))
 
         """
         if self.num_labels > 2:
@@ -275,6 +275,6 @@ class OrdinalUNet(SegmentationNetwork):
                                    },
                           )
 
-        self.final_shape = out._keras_shape
+        self.final_shape = out.shape  # Ricardo: _keras_shape no longer exists, I think it's the same as shape ..
 
         return opt_model, model

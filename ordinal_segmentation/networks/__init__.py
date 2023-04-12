@@ -1,20 +1,21 @@
 from scipy.ndimage.morphology import distance_transform_edt
 from sklearn.base import BaseEstimator, TransformerMixin
-from itertools import izip
+from functools import reduce
+
 import numpy as np
 import copy
 import cv2
 import os
 
 # Keras
-from keras.callbacks import EarlyStopping, ModelCheckpoint
+from tensorflow.compat.v1.keras.callbacks import EarlyStopping, ModelCheckpoint
 #from keras.preprocessing.image import ImageDataGenerator
-from augmentation import MyImageDataGenerator
+from .augmentation import MyImageDataGenerator
 
 
-import utils
+from . import utils
 
-from keras.layers import advanced_activations as adactivations
+#from keras.layers import advanced_activations as adactivations
 
 
 def rescale_img(img):
@@ -124,7 +125,9 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
                  smoothness_weight=1e-4,
                  parallel_hyperplanes=False,
                  augment={},
+                 final_act='sigmoid',  # Ricardo: this way we can also try with 'softmax'
                  ):
+        self.final_act = final_act  # Ricardo
         self.img_size = img_size
 
         # Convolutional layers
@@ -199,6 +202,8 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
                                        callbacks=[early_stop, checkpoint],
                                        validation_data=val_gen,
                                        validation_steps=val_steps,
+                                       # Ricardo added 'use_multiprocessing=True' because 'RuntimeError: Your generator is NOT thread-safe. Keras requires a thread-safe generator when `use_multiprocessing=False, workers > 1'
+                                       use_multiprocessing=True
                                        )
 
         self.history = self.opt_network.history.history
@@ -263,7 +268,7 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
         ret = np.asarray([cv2.split(x) for x in ret])
 
         ret = np.asarray(ret) * 255
-        print ret.shape
+        print(ret.shape)
         return ret
 
     def load_weights(self):
@@ -318,14 +323,14 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
             )
 
         if self.include_distances:
-            img_gen_ = distance_to_center(izip(img_gen_, mask_gen_))
+            img_gen_ = distance_to_center(zip(img_gen_, mask_gen_))
 
         if self.ordinal_output:
             out_gen_ = ordinal_gen(out_gen_, self.labels_mapping)
         else:
             out_gen_ = nominal_gen(out_gen_, self.labels_mapping)
 
-        return izip(img_gen_, out_gen_)
+        return zip(img_gen_, out_gen_)
 
     def ordinal_label_mapping(self, path):
         lpath = os.path.join(path, 'train', 'masks', 'seg')
@@ -341,4 +346,4 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
         else:
             self.num_labels = sum(self.labels_mapping != -1)
 
-        print self.num_labels
+        print(self.num_labels)
