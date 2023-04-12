@@ -10,5 +10,6 @@ This is Kelwin's code to his paper: https://ieeexplore.ieee.org/document/8489527
 * I also added a baseline that uses 'softmax' instead of the 'sigmoid' (default)
 
 **How to use?**
+* Install latest TensorFlow: `pip3 install tensorflow`
 * Just run `python3 eval_ordinal_networks.py --dataset /data/bioeng/ordinal-segmentation/teeth.json` for the `teeth` dataset. It will automatically train all models and evaluate them.
 * This will run for the first fold only. To run for other folds, you need to use `--first` and `--last`.
