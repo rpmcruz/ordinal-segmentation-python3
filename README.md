@@ -1,4 +1,4 @@
-# Ordinal Segmentation using Deep Neural Networks
+# Ordinal Segmentation using Deep Neural Networks [ported to Python3+TensorFlow2]
 
 This is Kelwin's code to his paper: https://ieeexplore.ieee.org/document/8489527
 
