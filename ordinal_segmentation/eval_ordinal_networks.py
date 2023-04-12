@@ -316,7 +316,7 @@ for foldid in range(dataset_config['folds']):
                                 parallel_hyperplanes=ord_[2],
                                 include_distances=ord_[3],
                                 augment=augment,
-                                max_epochs=5,
+                                max_epochs=500,
                                 keras_filepath=path,
                                 final_act=final_act,  # Ricardo
                                 )
