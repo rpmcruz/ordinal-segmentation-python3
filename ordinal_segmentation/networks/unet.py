@@ -3,6 +3,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 import cv2
 import os
+import tensorflow as tf
 
 
 # Keras
@@ -136,7 +137,8 @@ class OrdinalUNet(SegmentationNetwork):
                         next_output = Conv2D(1, (1, 1), activation='linear')(
                             last_per_label[d])
 
-                    next_output = Activation(self.final_act)(next_output)  # Ricardo
+                    next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
+                                         name='sigmoid%d' % d)(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -154,8 +156,8 @@ class OrdinalUNet(SegmentationNetwork):
                             last_per_label[d])
 
     
-                    next_output = Activation(self.final_act,
-                                            name='sigmoid%d' % d)(next_output)  # Ricardo
+                    next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
+                                         name='sigmoid%d' % d)(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -163,7 +165,7 @@ class OrdinalUNet(SegmentationNetwork):
                 next_output = Conv2D(1, (1, 1), activation='linear',
                                      name='out%d' % d)(last_per_label[d])
 
-                next_output = Activation(self.final_act,
+                next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
                                          name='sigmoid%d' % d)(next_output)  # Ricardo
 
                 scoring_outputs.append(next_output)
