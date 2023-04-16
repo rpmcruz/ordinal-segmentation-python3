@@ -2,6 +2,7 @@ from scipy.ndimage.morphology import distance_transform_edt
 from sklearn.base import BaseEstimator, TransformerMixin
 from functools import reduce
 
+import tensorflow.compat.v1 as tf
 import numpy as np
 import copy
 import cv2
@@ -45,8 +46,8 @@ def ordinal_gen(generator, mapping):
                                                      #next_.shape[2],
                                                      #1))}
 
-        yield {'output': next_, 'hor-monoticity': next_,
-               'ver-monoticity': next_}
+        yield {'output': next_}#, 'hor-monoticity': next_,
+               #'ver-monoticity': next_}
 
 
 def distance_to_center(generator):
@@ -218,6 +219,7 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
 
     def predict(self, X):
         probs = self.transform(X) / 255.
+        print("predict transform shape", probs.shape)
 
         if self.ordinal_output:
             ret = np.zeros((probs.shape[0],
@@ -225,7 +227,7 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
                            dtype=np.uint8)
 
             for class_ in range(self.num_labels):
-                ret[probs[:, class_, :, :] >= 0.5] = class_ + 1
+                ret[probs[:, class_, :, :] >= 0.5] = class_ + 1 # when softmax, only one class will be >= 0.5; if none, then it's the background
 
             """
             class_ = np.round((probs.sum(axis=1))).astype(np.int)
@@ -245,14 +247,21 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
             #print ret.sum(axis=1).shape
             #print np.unique(np.sum(ret, axis=1).ravel())
             #print np.unique(ret.ravel())
-        else:
+        elif self.final_act == 'sigmoid' or self.final_act == 'softmax':
             ret = np.zeros(probs.shape, dtype=np.uint8)
             ret = probs.argmax(axis=1)
             ret = ret.astype(np.uint8)
+        else:
+            print(f"ERROR: final activation not supported: {self.final_act}")
+            exit()
+        
+        
+        print("predict ret shape (before final)", ret.shape, tf.reduce_max(ret), tf.reduce_min(ret))
 
         ret = [cv2.resize(p, x.shape[: 2][::-1],
                           interpolation=cv2.INTER_NEAREST)
                for p, x in zip(ret, X)]
+        print("predict ret shape (final)", f"({len(ret)}, {ret[0].shape})")
 
         return ret
 
@@ -263,12 +272,13 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
 
         X_rsz = np.asarray(X_rsz).astype(np.float32)
         ret = self.network.predict(X_rsz)
+        print("transform predict shape", ret.shape)
         
         ret = np.squeeze(np.asarray(ret))
         ret = np.asarray([cv2.split(x) for x in ret])
 
         ret = np.asarray(ret) * 255
-        print(ret.shape)
+        print("transform ret shape", ret.shape)
         return ret
 
     def load_weights(self):
@@ -346,4 +356,4 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
         else:
             self.num_labels = sum(self.labels_mapping != -1)
 
-        print(self.num_labels)
+        print("n labels", self.num_labels)

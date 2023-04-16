@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
 import cv2
 import os
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 
 # Keras
@@ -11,7 +11,7 @@ from tensorflow.compat.v1.keras.layers import BatchNormalization
 from tensorflow.compat.v1.keras.layers import Conv2D, UpSampling2D, \
     Conv2DTranspose, SeparableConv2D, Conv3D
 from tensorflow.compat.v1.keras.layers import Input, Dense, Dropout, Flatten, Cropping2D
-from tensorflow.compat.v1.keras.layers import Activation, Lambda, ActivityRegularization
+from tensorflow.compat.v1.keras.layers import Activation, Lambda, ActivityRegularization, Softmax
 from tensorflow.compat.v1.keras.layers import MaxPooling2D
 from tensorflow.compat.v1.keras.initializers import glorot_uniform
 from tensorflow.compat.v1.keras.layers import Concatenate, Maximum, Add, Multiply
@@ -126,6 +126,9 @@ class OrdinalUNet(SegmentationNetwork):
                                                   reverse_layer(y)]))
 
         scoring = Conv2D(1, (1, 1), activation='linear')(last_per_label[-1])
+                
+        if self.final_act == 'softmax':
+            print("CONFIRMED: Using softmax!")
 
         for d in range(1 , self.num_labels + 1):
             if self.pointwise_ordinal:
@@ -137,9 +140,11 @@ class OrdinalUNet(SegmentationNetwork):
                         next_output = Conv2D(1, (1, 1), activation='linear')(
                             last_per_label[d])
 
-                    next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
-                                         name='sigmoid%d' % d)(next_output)  # Ricardo
-
+                    
+                    if self.final_act == 'sigmoid':
+                        print("*** Sigmoid is being applied before concat")
+                        next_output = Activation(self.final_act, name=self.final_act + str(d))(next_output)  # Ricardo
+                    
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
 
@@ -156,8 +161,9 @@ class OrdinalUNet(SegmentationNetwork):
                             last_per_label[d])
 
     
-                    next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
-                                         name='sigmoid%d' % d)(next_output)  # Ricardo
+                    if self.final_act == 'sigmoid':
+                        print("*** Sigmoid is being applied before concat")
+                        next_output = Activation(self.final_act, name=self.final_act + str(d))(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -165,15 +171,24 @@ class OrdinalUNet(SegmentationNetwork):
                 next_output = Conv2D(1, (1, 1), activation='linear',
                                      name='out%d' % d)(last_per_label[d])
 
-                next_output = tf.keras.layers.Softmax(axis=1)(next_output) if self.final_act == 'softmax' else Activation(self.final_act,
-                                         name='sigmoid%d' % d)(next_output)  # Ricardo
+                if self.final_act == 'sigmoid':
+                    print("*** Sigmoid is being applied before concat")
+                    next_output = Activation(self.final_act, name=self.final_act + str(d))(next_output)  # Ricardo
 
                 scoring_outputs.append(next_output)
                 prob_outputs.append(next_output)
 
             outputs.append(next_output)
 
-        out = Concatenate(axis=-1, name='output')(outputs)
+
+
+        if self.final_act == 'softmax':
+            out = Concatenate(axis=-1, name='concat')(outputs)
+            print("Outputs shape after concat", out.shape)
+            print("*** Softmax is being applied after concat")
+            out = Softmax(axis=-1, name='output')(out) # axis -1 because shape is (N, ..., ..., K)
+        else:
+            out = Concatenate(axis=-1, name='output')(outputs)
 
         subtract = lambda x, y: Add()([x, reverse_layer(y)])
         elem_hinge = lambda x: Lambda(lambda k: K.maximum(k, 0.))(x)
@@ -256,6 +271,8 @@ class OrdinalUNet(SegmentationNetwork):
         loss = {'output': self.loss}
         loss_weights = {'output': 1.}
 
+        print(loss)
+
         if self.include_distances:
             smoothness_weight = 0.5 * self.smoothness_weight
 
@@ -266,6 +283,8 @@ class OrdinalUNet(SegmentationNetwork):
             loss['ver-monoticity'] = mean_value_loss
             loss_weights['hor-monoticity'] = smoothness_weight
             loss_weights['ver-monoticity'] = smoothness_weight
+
+        print(loss)
 
         model = Model(inputs=[input_layer], outputs=[out])
 

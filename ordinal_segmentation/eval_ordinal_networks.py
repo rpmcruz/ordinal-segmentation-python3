@@ -237,6 +237,7 @@ def mae_at_boundary(y_true, y_pred, bandwidth=5):
 
 np.random.seed(42)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.enable_eager_execution()
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -258,32 +259,40 @@ losses = [('GDice', utils.geometric_dice_loss),
 augment = dataset_config['augment']
 
 ordinal_list = [
-                # Baseline
-                (False, False, False, False),
-                # Ricardo: Baseline with softmax
+                # # Ricardo: Baseline with softmax
                 (False, False, False, False, 'softmax'),
-                # Frank & Hall output
+                # # Baseline (sigmoid)
+                (False, False, False, False),
+                # # Frank & Hall output
                 (True, False, False, False),
-                (True, False, True, False),
+                # (True, False, True, False),
 
-                # Frank & Hall output + Min consistency
-                (True, 'min', False, False),
-                (True, 'min', True, False),
-                #(True, 'min', False, True),
+                # # Frank & Hall output + Min consistency
+                # (True, 'min', False, False),
+                # (True, 'min', True, False),
+                # #(True, 'min', False, True),
 
-                # Frank & Hall output + Multiply consistency
+                # # Frank & Hall output + Multiply consistency
                 (True, 'mul', False, False),
-                (True, 'mul', True, False),
-                #(True, 'mul', False, True),
+                # (True, 'mul', True, False),
+                # #(True, 'mul', False, True),
                 
                 ]
 
+# for mask in map_to_ordinal(test_masks):
+#     print(mask.shape)
+#     plt.imshow(mask, cmap='gray')
+#     plt.show()
+
+# exit
+
 for foldid in range(dataset_config['folds']):
-    for conv_num in range(2, 5):
+    for conv_num in range(2, 3):
         conv_filter_size = 3
         loss_name, loss = losses[0]
 
         for ord_ in ordinal_list:
+            print(f"\n>>> Fold {foldid} | Conv Num {conv_num} | Ord {ord_}\n")
             # Ricardo: allow using 'softmax' instead of 'sigmoid' (default)
             # Also added this suffix to the path to save both baselines.
             final_act = ord_[4] if len(ord_) > 4 else 'sigmoid'
@@ -338,10 +347,32 @@ for foldid in range(dataset_config['folds']):
             preds = model.predict(test_imgs)
             probs = model.transform(test_imgs)
 
+            preds_max = 0
+            preds_min = 500
+            for _p in preds:
+                if float(tf.reduce_max(_p).numpy()) > preds_max:
+                    preds_max = max(float(tf.reduce_max(_p).numpy()), preds_max)
+                if float(tf.reduce_min(_p).numpy()) < preds_min:
+                    preds_min = min(float(tf.reduce_min(_p).numpy()), preds_min)
+            
+            test_masks_ord = map_to_ordinal(test_masks)
+            test_masks_max = 0
+            test_masks_min = 500
+            for _p in test_masks_ord:
+                if float(tf.reduce_max(_p).numpy()) > test_masks_max:
+                    test_masks_max = max(float(tf.reduce_max(_p).numpy()), test_masks_max)
+                if float(tf.reduce_min(_p).numpy()) < test_masks_min:
+                    test_masks_min = min(float(tf.reduce_min(_p).numpy()), test_masks_min)
+
+
+            print(f"Preds max = {preds_max}, min = {preds_min}")
+            print(f"Test masks max = {test_masks_max}, min = {test_masks_min}")
             print(path)
 
             classes = set([y for x in test_masks for y in list(set(x.ravel()))])
             nlabels = len(classes)
+
+            print("N labels = ", nlabels)
 
             for label_id, label in enumerate(sorted(list(classes))):
                 current_mask = [t >= label for t in test_masks]
@@ -359,6 +390,7 @@ for foldid in range(dataset_config['folds']):
             print()
             #"""
             print()
+    break
 
 os.sys.exit(0)
 
