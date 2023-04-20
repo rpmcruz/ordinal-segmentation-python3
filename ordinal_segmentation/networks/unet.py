@@ -13,7 +13,7 @@ from tensorflow.compat.v1.keras.layers import Input, Dense, Dropout, Flatten, Cr
 from tensorflow.compat.v1.keras.layers import Activation, Lambda, ActivityRegularization
 from tensorflow.compat.v1.keras.layers import MaxPooling2D
 from tensorflow.compat.v1.keras.initializers import glorot_uniform
-from tensorflow.compat.v1.keras.layers import Concatenate, Maximum, Add, Multiply
+from tensorflow.compat.v1.keras.layers import Concatenate, Maximum, Add, Multiply, Softmax
 from tensorflow.compat.v1.keras.utils import to_categorical
 from tensorflow.compat.v1.keras.layers import Reshape
 from tensorflow.compat.v1.keras import regularizers
@@ -136,7 +136,8 @@ class OrdinalUNet(SegmentationNetwork):
                         next_output = Conv2D(1, (1, 1), activation='linear')(
                             last_per_label[d])
 
-                    next_output = Activation(self.final_act)(next_output)  # Ricardo
+                    if self.final_act != 'softmax':
+                        next_output = Activation(self.final_act, name='%s%d' % (self.final_act, d))(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -154,8 +155,8 @@ class OrdinalUNet(SegmentationNetwork):
                             last_per_label[d])
 
     
-                    next_output = Activation(self.final_act,
-                                            name='sigmoid%d' % d)(next_output)  # Ricardo
+                    if self.final_act != 'softmax':
+                        next_output = Activation(self.final_act, name='%s%d' % (self.final_act, d))(next_output)  # Ricardo
 
                     scoring_outputs.append(next_output)
                     prob_outputs.append(next_output)
@@ -163,15 +164,19 @@ class OrdinalUNet(SegmentationNetwork):
                 next_output = Conv2D(1, (1, 1), activation='linear',
                                      name='out%d' % d)(last_per_label[d])
 
-                next_output = Activation(self.final_act,
-                                         name='sigmoid%d' % d)(next_output)  # Ricardo
+                if self.final_act != 'softmax':
+                    next_output = Activation(self.final_act, name='%s%d' % (self.final_act, d))(next_output)  # Ricardo
 
                 scoring_outputs.append(next_output)
                 prob_outputs.append(next_output)
 
             outputs.append(next_output)
 
-        out = Concatenate(axis=-1, name='output')(outputs)
+        if self.final_act == 'softmax':
+            out = Concatenate(axis=-1, name='concat')(outputs)
+            out = Softmax(axis=-1, name='output')(out) # axis -1 because shape is (N, ..., ..., K)
+        else:
+            out = Concatenate(axis=-1, name='output')(outputs)
 
         subtract = lambda x, y: Add()([x, reverse_layer(y)])
         elem_hinge = lambda x: Lambda(lambda k: K.maximum(k, 0.))(x)
