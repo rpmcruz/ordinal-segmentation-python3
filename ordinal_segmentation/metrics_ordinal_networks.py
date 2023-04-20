@@ -300,8 +300,8 @@ ordinal_list = [
                 ## Baseline
                 #(False, False, False, False),
                 ## Frank & Hall output
-                #(True, False, False, False),
-                (True, False, True, False),
+                (True, False, False, False),
+                # (True, False, True, False),
 
                 ## Frank & Hall output + Min consistency
                 #(True, 'min', False, False),

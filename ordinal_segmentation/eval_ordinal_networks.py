@@ -4,6 +4,7 @@ from sklearn.metrics import log_loss
 import matplotlib.pyplot as plt
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.keras import backend as K
 tf.disable_v2_behavior()
 import numpy as np
 import argparse
@@ -237,11 +238,12 @@ def mae_at_boundary(y_true, y_pred, bandwidth=5):
 
 np.random.seed(42)
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-tf.enable_eager_execution()
+# tf.enable_eager_execution()
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
-#set_session(tf.Session(config=config))
+config.gpu_options.per_process_gpu_memory_fraction=0.666
+K.set_session(tf.Session(config=config))
 
 args = get_args()
 
@@ -285,9 +287,8 @@ ordinal_list = [
 #     plt.show()
 
 # exit
-
 for foldid in range(dataset_config['folds']):
-    for conv_num in range(2, 3):
+    for conv_num in range(3, 4):
         conv_filter_size = 3
         loss_name, loss = losses[0]
 
@@ -307,11 +308,11 @@ for foldid in range(dataset_config['folds']):
                                 ord_[0], ord_[1], ord_[2], suffix))
 
             pckl_path = os.path.join('output', 'models',
-                                     dataset_config['name'],
-                                     'fold%d' % foldid,
-                                     'unet%d-%d-%s-%d-%s-%d%s.pckl' %
-                                     (conv_num, conv_filter_size, loss_name,
-                                      ord_[0], ord_[1], ord_[2], suffix))
+                                    dataset_config['name'],
+                                    'fold%d' % foldid,
+                                    'unet%d-%d-%s-%d-%s-%d%s.pckl' %
+                                    (conv_num, conv_filter_size, loss_name,
+                                    ord_[0], ord_[1], ord_[2], suffix))
 
             if os.path.exists(path) or os.path.exists(pckl_path):
                 print(path, 'already exists')
@@ -325,7 +326,7 @@ for foldid in range(dataset_config['folds']):
                                 parallel_hyperplanes=ord_[2],
                                 include_distances=ord_[3],
                                 augment=augment,
-                                max_epochs=500,
+                                max_epochs=200,
                                 keras_filepath=path,
                                 final_act=final_act,  # Ricardo
                                 )
@@ -347,26 +348,26 @@ for foldid in range(dataset_config['folds']):
             preds = model.predict(test_imgs)
             probs = model.transform(test_imgs)
 
-            preds_max = 0
-            preds_min = 500
-            for _p in preds:
-                if float(tf.reduce_max(_p).numpy()) > preds_max:
-                    preds_max = max(float(tf.reduce_max(_p).numpy()), preds_max)
-                if float(tf.reduce_min(_p).numpy()) < preds_min:
-                    preds_min = min(float(tf.reduce_min(_p).numpy()), preds_min)
+            # preds_max = 0
+            # preds_min = 500
+            # for _p in preds:
+            #     if float(tf.reduce_max(_p).numpy()) > preds_max:
+            #         preds_max = max(float(tf.reduce_max(_p).numpy()), preds_max)
+            #     if float(tf.reduce_min(_p).numpy()) < preds_min:
+            #         preds_min = min(float(tf.reduce_min(_p).numpy()), preds_min)
             
-            test_masks_ord = map_to_ordinal(test_masks)
-            test_masks_max = 0
-            test_masks_min = 500
-            for _p in test_masks_ord:
-                if float(tf.reduce_max(_p).numpy()) > test_masks_max:
-                    test_masks_max = max(float(tf.reduce_max(_p).numpy()), test_masks_max)
-                if float(tf.reduce_min(_p).numpy()) < test_masks_min:
-                    test_masks_min = min(float(tf.reduce_min(_p).numpy()), test_masks_min)
+            # test_masks_ord = map_to_ordinal(test_masks)
+            # test_masks_max = 0
+            # test_masks_min = 500
+            # for _p in test_masks_ord:
+            #     if float(tf.reduce_max(_p).numpy()) > test_masks_max:
+            #         test_masks_max = max(float(tf.reduce_max(_p).numpy()), test_masks_max)
+            #     if float(tf.reduce_min(_p).numpy()) < test_masks_min:
+            #         test_masks_min = min(float(tf.reduce_min(_p).numpy()), test_masks_min)
 
 
-            print(f"Preds max = {preds_max}, min = {preds_min}")
-            print(f"Test masks max = {test_masks_max}, min = {test_masks_min}")
+            # print(f"Preds max = {preds_max}, min = {preds_min}")
+            # print(f"Test masks max = {test_masks_max}, min = {test_masks_min}")
             print(path)
 
             classes = set([y for x in test_masks for y in list(set(x.ravel()))])

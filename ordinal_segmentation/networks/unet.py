@@ -183,6 +183,7 @@ class OrdinalUNet(SegmentationNetwork):
 
 
         if self.final_act == 'softmax':
+            print("outputs shape before concat", f"({len(outputs)}, {outputs[0].shape})")
             out = Concatenate(axis=-1, name='concat')(outputs)
             print("Outputs shape after concat", out.shape)
             print("*** Softmax is being applied after concat")

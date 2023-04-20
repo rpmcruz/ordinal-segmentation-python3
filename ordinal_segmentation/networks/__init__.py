@@ -1,6 +1,7 @@
 from scipy.ndimage.morphology import distance_transform_edt
 from sklearn.base import BaseEstimator, TransformerMixin
 from functools import reduce
+from matplotlib import pyplot as plt
 
 import tensorflow.compat.v1 as tf
 import numpy as np
@@ -175,6 +176,26 @@ class SegmentationNetwork(BaseEstimator, TransformerMixin):
 
         train_gen = self.get_generator(path, 'train')
         val_gen = self.get_generator(path, 'validation')
+
+        # for clss in range(self.num_labels):
+        #     for (img, mask) in train_gen:
+        #         print("train_gen", img.shape, mask['output'].shape)
+        #         plt.subplot(2, 2, 1)
+        #         plt.imshow(img[0]/255.)
+        #         plt.subplot(2, 2, 2)
+        #         plt.imshow(mask['output'][0][:, :, clss], cmap='gray')
+        #         break
+
+        #     for (img, mask) in val_gen:
+        #         print("val_gen", img.shape, mask['output'].shape)
+        #         plt.subplot(2, 2, 3)
+        #         plt.imshow(img[0]/255.)
+        #         plt.subplot(2, 2, 4)
+        #         plt.imshow(mask['output'][0][:, :, clss], cmap='gray')
+        #         break
+
+        #     plt.show()
+        # exit()
 
         checkpoint = ModelCheckpoint(self.keras_filepath,
                                      monitor='val_loss',
